@@ -22,6 +22,7 @@ class TestCreateNote(TestCase):
         }
 
     def test_user_can_create_note(self):
+        """Залогиненный пользователь может создать заметку"""
         self.client.force_login(self.author)
         url = reverse('notes:add')
         response = self.client.post(url, data=self.form_data)
@@ -33,6 +34,7 @@ class TestCreateNote(TestCase):
         self.assertEqual(new_note.author, self.author)
 
     def test_anonymous_user_cant_create_note(self):
+        """Анонимный пользователь не может создать заметку"""
         url = reverse('notes:add')
         response = self.client.post(url, data=self.form_data)
         login_url = reverse('users:login')
@@ -41,6 +43,7 @@ class TestCreateNote(TestCase):
         assert Note.objects.count() == 0
 
     def test_not_unique_slug(self):
+        # Тестим что невозможно создать две заметки с одинаковым slug.
         note = Note.objects.create(author=self.author, **self.form_data)
         url = reverse('notes:add')
         self.client.force_login(self.author)
@@ -60,9 +63,10 @@ class TestCreateNote(TestCase):
             )
         )
         """Вот здесь я вывожу ошибку понятным
-           языком может и в остальном коде так сделаю :)"""
+           языком может и в остальном коде так сделаю, но это не точно :)"""
 
     def test_author_can_edit_note(self):
+        """Пользователь может редактировать свои заметки"""
         note = Note.objects.create(author=self.author, **self.form_data)
         self.client.force_login(self.author)
         url = reverse('notes:edit', args=(note.slug,))
@@ -75,6 +79,7 @@ class TestCreateNote(TestCase):
         assert note.slug == self.form_data['slug']
 
     def test_other_user_cant_edit_note(self):
+        """Другой пользователь не может редактировать чужие заметки"""
         note = Note.objects.create(author=self.author, **self.form_data)
         self.client.force_login(self.user)
         url = reverse('notes:edit', args=(note.slug,))
@@ -86,6 +91,7 @@ class TestCreateNote(TestCase):
         assert note.slug == note_from_db.slug
 
     def test_author_can_delete_note(self):
+        """Автор может удалять свои заметки"""
         note = Note.objects.create(author=self.author, **self.form_data)
         self.client.force_login(self.author)
         url = reverse('notes:delete', args=(note.slug,))
@@ -94,6 +100,7 @@ class TestCreateNote(TestCase):
         assert Note.objects.count() == 0
 
     def test_other_user_cant_delete_note(self):
+        """Юрез не может удалять чужие заметки"""
         note = Note.objects.create(author=self.author, **self.form_data)
         self.client.force_login(self.user)
         url = reverse('notes:delete', args=(note.slug,))

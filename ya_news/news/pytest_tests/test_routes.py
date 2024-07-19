@@ -1,72 +1,66 @@
-# news/tests/test_routes.py
+import pytest
 from http import HTTPStatus
-
-from django.test import TestCase
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from news.models import News, Comment
+pytestmark = pytest.mark.django_db
 
-User = get_user_model()
+@pytest.mark.parametrize(
+    'name',
+    ('news:home', 'users:login', 'users:logout', 'users:signup')
+)
+def test_pages_availability_for_anonymous_user(client, name, news):
+    '''
+    Проверяем что главная страница доступна анонимному пользователю.
+    Страницы регистрации пользователей,
+    входа в учётную запись и выхода из неё доступны анонимным пользователям.
+    '''
+    url = reverse(name)
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
 
-class TestRoutes(TestCase):
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.news = News.objects.create(title='Заголовок', text='Текст')
-        # Создаём двух пользователей с разными именами:
-        cls.author = User.objects.create(username='Лев Толстой')
-        cls.reader = User.objects.create(username='Читатель простой')
-        # От имени одного пользователя создаём комментарий к новости:
-        cls.comment = Comment.objects.create(
-            news=cls.news,
-            author=cls.author,
-            text='Текст комментария'
-        )
+def test_detail_page(client, news):
+    """Тест что страница отдельной новости доступна анонимному пользователю."""
+    url = reverse('news:detail', args=(news.pk,))
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
 
-    def test_pages_availability(self):
-        urls = (
-            ('news:home', None),
-            ('news:detail', (self.news.id,)),
-            ('users:login', None),
-            ('users:logout', None),
-            ('users:signup', None),
-        )
-        for name, args in urls:
-            with self.subTest(name=name):
-                url = reverse(name, args=args)
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_availability_for_comment_edit_and_delete(self):
-        users_statuses = (
-            (self.author, HTTPStatus.OK),
-            (self.reader, HTTPStatus.NOT_FOUND),
-        )
-        for user, status in users_statuses:
-            # Логиним пользователя в клиенте:
-            self.client.force_login(user)
-            # Для каждой пары "пользователь - ожидаемый ответ"
-            # перебираем имена тестируемых страниц:
-            for name in ('news:edit', 'news:delete'):
-                with self.subTest(user=user, name=name):
-                    url = reverse(name, args=(self.comment.id,))
-                    response = self.client.get(url)
-                    self.assertEqual(response.status_code, status)
+@pytest.mark.parametrize(
+    'parametrized_client, expected_status',
+    (
+        (pytest.lazy_fixture('author_client'), HTTPStatus.OK),
+        (pytest.lazy_fixture('not_author_client'), HTTPStatus.NOT_FOUND)
+    )
+)
+@pytest.mark.parametrize(
+    'name',
+    ('news:edit', 'news:delete')
+)
+def test_edit_delete_comment_for_users(
+    name, comment, parametrized_client, expected_status
+):
+    """Тест что cтраницы удаления и редактирования комментария
+    доступны автору комментария.
+    """
+    url = reverse(name, args=(comment.id,))
+    response = parametrized_client.get(url)
+    assert response.status_code == expected_status
 
-    def test_redirect_for_anonymous_client(self):
-        # Сохраняем адрес страницы логина:
-        login_url = reverse('users:login')
-        # В цикле перебираем имена страниц, с которых ожидаем редирект:
-        for name in ('news:edit', 'news:delete'):
-            with self.subTest(name=name):
-                # Получаем адрес страницы редактирования или удаления комментария:
-                url = reverse(name, args=(self.comment.id,))
-                # Получаем ожидаемый адрес страницы логина, 
-                # на который будет перенаправлен пользователь.
-                # Учитываем, что в адресе будет параметр next, в котором передаётся
-                # адрес страницы, с которой пользователь был переадресован.
-                redirect_url = f'{login_url}?next={url}'
-                response = self.client.get(url)
-                # Проверяем, что редирект приведёт именно на указанную ссылку.
-                self.assertRedirects(response, redirect_url) 
+
+@pytest.mark.parametrize(
+    'name',
+    ('news:edit', 'news:delete')
+)
+def test_redirect_for_anonymous(client, name, comment):
+    """
+    Проверяем, что при попытке перейти на страницу редактирования
+    или удаления комментария анонимный пользователь перенаправляется
+    на страницу авторизации.
+    """
+    login_url = reverse('users:login')
+    url = reverse(name, args=(comment.id,))
+    redirect_url = f'{login_url}?next={url}'
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == redirect_url

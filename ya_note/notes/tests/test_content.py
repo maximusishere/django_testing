@@ -19,6 +19,10 @@ class TestContent(TestCase):
         )
 
     def test_note_for_author(self):
+        """
+        отдельная заметка передаётся на страницу со списком заметок в
+        списке object_list в словаре context
+        """
         self.client.force_login(self.author)
         url = reverse('notes:list')
         response = self.client.get(url)
@@ -26,6 +30,7 @@ class TestContent(TestCase):
         self.assertIn(self.note, object_list)
 
     def test_note_not_author(self):
+        """в список заметок не попадают заметки другого пользователя"""
         self.client.force_login(self.not_author)
         url = reverse('notes:list')
         response = self.client.get(url)
@@ -33,6 +38,7 @@ class TestContent(TestCase):
         self.assertNotIn(self.note, object_list)
 
     def test_create_note_page_contains_form(self):
+        """на страницы создания заметки передаются формы"""
         self.client.force_login(self.author)
         url = reverse('notes:add')
         response = self.client.get(url)
@@ -40,6 +46,7 @@ class TestContent(TestCase):
         self.assertIsInstance(response.context['form'], NoteForm)
 
     def test_edit_note_page_contains_form(self):
+        """на страницы редактирования заметки передаются формы"""
         self.client.force_login(self.author)
         url = reverse('notes:edit', args=[self.note.slug])
         response = self.client.get(url)

@@ -22,6 +22,11 @@ class TestRoutes(TestCase):
         )
 
     def test_pages_availability_for_loginned_user(self):
+        """
+        Аутентифицированному пользователю доступна страница со списком
+        заметок notes/, страница успешного добавления заметки done/,
+        страница добавления новой заметки add/.
+        """
         user = self.client.force_login(self.logged_in)
         for name in ('notes:success', 'notes:list', 'notes:add',):
             with self.subTest(user=user, name=name):
@@ -29,7 +34,12 @@ class TestRoutes(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
+
     def test_pages_availability(self):
+        """
+        Главная страница и страницы регистрации пользователей, входа в учётную
+        запись и выхода из неё доступны всем пользователям.
+        """
         urls = (
             ('notes:home'),
             ('users:login'),
@@ -44,6 +54,10 @@ class TestRoutes(TestCase):
 
 
     def test_availability_for_note_detail_edit_and_delete(self):
+        """
+        Страницы отдельной заметки, удаления и редактирования
+        заметки доступны только автору заметки.
+        """
         users_statuses = (
             (self.author, HTTPStatus.OK),
             (self.reader, HTTPStatus.NOT_FOUND),
@@ -58,6 +72,12 @@ class TestRoutes(TestCase):
                     self.assertEqual(response.status_code, status)
 
     def test_redirect_for_anonymous_user(self):
+        """
+        При попытке перейти на страницу списка заметок, страницу успешного
+        добавления записи, страницу добавления заметки, отдельной заметки,
+        редактирования или удаления заметки анонимный пользователь
+        перенаправляется на страницу логина
+        """
         login_url = reverse('users:login')
         urls = (
             ('notes:list', None),
