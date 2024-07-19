@@ -34,7 +34,6 @@ class TestRoutes(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-
     def test_pages_availability(self):
         """
         Главная страница и страницы регистрации пользователей, входа в учётную
@@ -51,7 +50,6 @@ class TestRoutes(TestCase):
                 url = reverse(name)
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-
 
     def test_availability_for_note_detail_edit_and_delete(self):
         """

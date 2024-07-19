@@ -2,6 +2,7 @@ from django.urls import reverse
 from django.conf import settings
 from news.forms import CommentForm
 
+
 def test_news_count_on_home_page(client, count_news):
     """Количество новостей на главной странице — не более 10."""
     home_url = reverse('news:home')

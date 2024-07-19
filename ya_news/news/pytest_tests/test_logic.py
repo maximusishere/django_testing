@@ -45,9 +45,7 @@ def test_user_cant_use_bad_words(author_client, news):
 
 
 def test_author_can_delete_comment(comment, author_client):
-    """
-    Авторизованный пользователь может удалять свои комментарии.
-    """
+    """Авторизованный пользователь может удалять свои комментарии."""
     comments_count = Comment.objects.count()
     assert comments_count == 1
     delete_url = reverse('news:delete', args=[comment.id])
@@ -57,9 +55,7 @@ def test_author_can_delete_comment(comment, author_client):
 
 
 def test_user_cant_delete_comment_of_another_user(comment, client):
-    """
-    Простой юзер не может удалять чужие комментарии.
-    """
+    """Простой юзер не может удалять чужие комментарии."""
     comments_count = Comment.objects.count()
     assert comments_count == 1
     delete_url = reverse('news:delete', args=[comment.id])
@@ -69,9 +65,7 @@ def test_user_cant_delete_comment_of_another_user(comment, client):
 
 
 def test_author_can_edit_comment(comment, author_client):
-    """
-    Авторизованный пользователь может редактировать свои комментарии.
-    """
+    """Авторизованный пользователь может редактировать свои комментарии."""
     edit_url = reverse('news:edit', args=[comment.id])
     form_data = {'text': NEW_COMMENT_TEXT}
     response = author_client.post(edit_url, form_data)
@@ -81,10 +75,9 @@ def test_author_can_edit_comment(comment, author_client):
     comment.refresh_from_db()
     assert comment.text == NEW_COMMENT_TEXT
 
+
 def test_user_cant_edit_comment_of_another_user(comment, client):
-    """
-    Простой юзер не может редактировать чужие комментарии.
-    """
+    """Простой юзер не может редактировать чужие комментарии."""
     edit_url = reverse('news:edit', args=[comment.id])
     form_data = {'text': NEW_COMMENT_TEXT}
     client.post(edit_url, form_data)
