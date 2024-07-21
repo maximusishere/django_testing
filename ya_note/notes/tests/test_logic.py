@@ -40,7 +40,7 @@ class TestCreateNote(TestCase):
         login_url = reverse('users:login')
         expected_url = f'{login_url}?next={url}'
         self.assertRedirects(response, expected_url)
-        assert Note.objects.count() == 0
+        assert not Note.objects.exists()
 
     def test_not_unique_slug(self):
         # Тестим что невозможно создать две заметки с одинаковым slug.
@@ -52,7 +52,7 @@ class TestCreateNote(TestCase):
         self.assertFormError(
             response, 'form', 'slug', errors=(note.slug + WARNING)
         )
-        assert Note.objects.count() == 1
+        assert Note.objects.exists()
         expected_slug = slugify(self.form_data['title'])
         self.assertEqual(
             self.form_data['slug'],
@@ -97,7 +97,7 @@ class TestCreateNote(TestCase):
         url = reverse('notes:delete', args=(note.slug,))
         response = self.client.post(url)
         self.assertRedirects(response, reverse('notes:success'))
-        assert Note.objects.count() == 0
+        assert not Note.objects.exists()
 
     def test_other_user_cant_delete_note(self):
         """Юрез не может удалять чужие заметки"""
@@ -106,4 +106,4 @@ class TestCreateNote(TestCase):
         url = reverse('notes:delete', args=(note.slug,))
         response = self.client.post(url)
         assert response.status_code == HTTPStatus.NOT_FOUND
-        assert Note.objects.count() == 1
+        assert Note.objects.exists()

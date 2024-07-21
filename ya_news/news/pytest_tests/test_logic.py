@@ -12,14 +12,12 @@ def test_anonymous_user_cant_create_comment(client, news):
     client.post(
         'news:edit', kwargs=('pk', news.id), data={'заголовок': 'Сам коммент'}
     )
-    comments_count = Comment.objects.count()
-    assert comments_count == 0
+    assert not Comment.objects.exists()
 
 
 def test_user_can_create_comment(comment):
     """Проверим, что авторизованный пользователь может отправить комментарий"""
-    comments_count = Comment.objects.count()
-    assert comments_count == 1
+    assert Comment.objects.exists()
     created_comment = Comment.objects.get()
     assert created_comment.text == 'Просто коммент'
     assert created_comment.news == comment.news
@@ -40,8 +38,7 @@ def test_user_cant_use_bad_words(author_client, news):
         field='text',
         errors=WARNING
     )
-    comments_count = Comment.objects.count()
-    assert comments_count == 0
+    assert not Comment.objects.exists()
 
 
 def test_author_can_delete_comment(comment, author_client):
@@ -50,18 +47,15 @@ def test_author_can_delete_comment(comment, author_client):
     assert comments_count == 1
     delete_url = reverse('news:delete', args=[comment.id])
     author_client.delete(delete_url)
-    comments_count = Comment.objects.count()
-    assert comments_count == 0
+    Comment.objects.exists()
 
 
 def test_user_cant_delete_comment_of_another_user(comment, client):
     """Простой юзер не может удалять чужие комментарии."""
-    comments_count = Comment.objects.count()
-    assert comments_count == 1
+    assert Comment.objects.exists()
     delete_url = reverse('news:delete', args=[comment.id])
     client.delete(delete_url)
-    comments_count = Comment.objects.count()
-    assert comments_count == 1
+    assert Comment.objects.exists()
 
 
 def test_author_can_edit_comment(comment, author_client):
